@@ -1,9 +1,12 @@
 from pathlib import Path
 
+import json
+
 import pytest
 
 from costlab import cli
 from costlab.pricing import load_prices
+from costlab.report import money
 from costlab.replay import MockTransport, PromptSet, load_prompts, pick_transport, run_replay, save_usage
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,7 +70,23 @@ def test_save_usage_writes_one_line_per_request(book, tmp_path):
     result = run_replay(PromptSet("s" * 4000, ["a", "b"]), MockTransport(), book, "claude-sonnet-5-5")
     out = tmp_path / "usage.jsonl"
     save_usage(result, out)
-    assert len(out.read_text(encoding="utf-8").splitlines()) == 4
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 4
+    # Mock estimates must stay labelled once they are on disk.
+    assert {row["mode"] for row in rows} == {"mock"}
+
+
+def test_cli_prices_file_with_missing_key_reports_error(tmp_path, capsys):
+    broken = tmp_path / "prices.toml"
+    broken.write_text(PRICES.read_text(encoding="utf-8").replace('fetched_on = "', 'fetched = "'), encoding="utf-8")
+    assert cli.main(["--prices", str(broken), "report"]) == 1
+    assert "missing key" in capsys.readouterr().err
+
+
+def test_money_puts_the_minus_sign_before_the_dollar_sign():
+    assert money(1234.5) == "$1,234.5000"
+    assert money(-0.0062) == "-$0.0062"
+    assert money(-0.00001) == "$0.0000"
 
 
 def test_cli_report_prints_before_and_after_table(capsys):

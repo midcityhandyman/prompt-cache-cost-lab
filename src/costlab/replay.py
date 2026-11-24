@@ -172,11 +172,15 @@ def run_replay(prompts: PromptSet, transport: Transport, book: PriceBook, model_
 
 
 def save_usage(result: ReplayResult, path: str | Path) -> None:
-    """Write measured usage as JSONL so a run can be inspected or re-costed later."""
+    """Write per request usage as JSONL so a run can be inspected later.
+
+    Every row carries `mode` ("live" or "mock"), so mock estimates cannot be
+    mistaken for measured usage once the file is on disk.
+    """
     with open(path, "w", encoding="utf-8") as handle:
         for label, usages in (("uncached", result.uncached), ("cached", result.cached)):
             for index, usage in enumerate(usages):
-                handle.write(json.dumps({"pass": label, "request": index, **asdict(usage)}) + "\n")
+                handle.write(json.dumps({"mode": result.mode, "pass": label, "request": index, **asdict(usage)}) + "\n")
 
 
 def replay_report(result: ReplayResult, book: PriceBook, transport_note: str) -> str:

@@ -123,3 +123,15 @@ def test_no_prices_hard_coded_in_source():
     for path in (ROOT / "src" / "costlab").glob("*.py"):
         text = path.read_text(encoding="utf-8")
         assert "per_mtok" not in text and "$4" not in text and "20.00" not in text, path.name
+
+
+@pytest.mark.parametrize(
+    "removed",
+    ['fetched_on = "2000-01-01"', "ttl_1h_seconds = 3600", "over_prompt_tokens = 1000"],
+)
+def test_missing_key_is_a_config_error_not_a_keyerror(tmp_path, removed):
+    assert removed in TEST_PRICES
+    path = tmp_path / "prices.toml"
+    path.write_text(TEST_PRICES.replace(removed, ""), encoding="utf-8")
+    with pytest.raises(PriceConfigError, match="missing key"):
+        load_prices(path)

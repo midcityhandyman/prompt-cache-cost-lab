@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--prompts", default=str(DEFAULT_PROMPTS), help="JSON prompt set")
     replay.add_argument("--model", default=DEFAULT_BASELINE)
     replay.add_argument("--live", action="store_true", help="use the real API (needs ANTHROPIC_API_KEY)")
-    replay.add_argument("--save", help="write measured usage to this JSONL file")
+    replay.add_argument("--save", help="write per request usage to this JSONL file (rows are tagged live or mock)")
     return parser
 
 
@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
             print(replay_report(result, book, note))
             if args.save:
                 save_usage(result, args.save)
-                print(f"Usage written to {args.save}")
+                print(f"Usage written to {args.save} ({result.mode} run)")
     except (PriceConfigError, ReplayError, ValueError, OSError) as problem:
         print(f"error: {problem}", file=sys.stderr)
         return 1

@@ -139,33 +139,37 @@ def load_prices(path: str | Path) -> PriceBook:
     except KeyError as missing:
         raise PriceConfigError(f"price file is missing section {missing}") from None
 
-    models: dict[str, ModelPrices] = {}
-    placeholders: set[str] = set()
-    for model_id, table in model_tables.items():
-        standard = _rates(table, model_id)
-        long_table = table.get("long_prompt")
-        long_rates = _rates(long_table, f"{model_id}.long_prompt") if long_table else None
-        if standard is None or (long_table and long_rates is None):
-            placeholders.add(model_id)
-            continue
-        models[model_id] = ModelPrices(
-            model_id=model_id,
-            label=table.get("label", model_id),
-            standard=standard,
-            long_prompt_over=long_table["over_prompt_tokens"] if long_table else None,
-            long_prompt=long_rates,
-        )
+    try:
+        models: dict[str, ModelPrices] = {}
+        placeholders: set[str] = set()
+        for model_id, table in model_tables.items():
+            standard = _rates(table, model_id)
+            long_table = table.get("long_prompt")
+            long_rates = _rates(long_table, f"{model_id}.long_prompt") if long_table else None
+            if standard is None or (long_table and long_rates is None):
+                placeholders.add(model_id)
+                continue
+            models[model_id] = ModelPrices(
+                model_id=model_id,
+                label=table.get("label", model_id),
+                standard=standard,
+                long_prompt_over=int(long_table["over_prompt_tokens"]) if long_table else None,
+                long_prompt=long_rates,
+            )
 
-    return PriceBook(
-        source_url=meta["source_url"],
-        fetched_on=str(meta["fetched_on"]),
-        batch_multiplier=float(modifiers["batch_multiplier"]),
-        ttl_5m_seconds=int(caching["ttl_5m_seconds"]),
-        ttl_1h_seconds=int(caching["ttl_1h_seconds"]),
-        min_cacheable_prefix_tokens=int(caching["min_cacheable_prefix_tokens"]),
-        models=models,
-        placeholder_models=frozenset(placeholders),
-    )
+        return PriceBook(
+            source_url=meta["source_url"],
+            fetched_on=str(meta["fetched_on"]),
+            batch_multiplier=float(modifiers["batch_multiplier"]),
+            ttl_5m_seconds=int(caching["ttl_5m_seconds"]),
+            ttl_1h_seconds=int(caching["ttl_1h_seconds"]),
+            min_cacheable_prefix_tokens=int(caching["min_cacheable_prefix_tokens"]),
+            models=models,
+            placeholder_models=frozenset(placeholders),
+        )
+    except KeyError as missing:
+        # A missing key anywhere in the file is a config problem, not a crash.
+        raise PriceConfigError(f"price file is missing key {missing}") from None
 
 
 def cost_of(usage: Usage, model: ModelPrices, multiplier: float = 1.0) -> Cost:

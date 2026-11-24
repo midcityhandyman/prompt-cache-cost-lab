@@ -22,7 +22,9 @@ def _table(headers: list[str], rows: list[list[str]], left: int = 1) -> str:
 
 
 def money(value: float) -> str:
-    return f"${value:,.4f}"
+    """Dollars to four places. A loss reads -$0.0062, and a tiny one never prints as -$0.0000."""
+    text = f"{abs(value):,.4f}"
+    return f"-${text}" if value < 0 and float(text.replace(",", "")) else f"${text}"
 
 
 def price_header(book: PriceBook) -> str:
