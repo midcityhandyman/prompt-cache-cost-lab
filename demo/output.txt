@@ -1,0 +1,81 @@
+==============================================================================
+1. Recorded usage, costed under every strategy (baseline: Opus tier)
+==============================================================================
+Workload: usage_recorded.jsonl (48 requests)
+Prices: https://platform.claude.com/docs/en/about-claude/pricing
+Fetched on: 2026-11-24 (re-check before relying on these numbers)
+
+BEFORE AND AFTER
+Strategy                         Model               Before    After    Saved  Saved %
+-------------------------------  -----------------  -------  -------  -------  -------
+Prompt caching, 5 minute TTL     Claude Opus 5.5    $1.6999  $0.6880  $1.0118    59.5%
+Prompt caching, 1 hour TTL       Claude Opus 5.5    $1.6999  $0.6657  $1.0342    60.8%
+Batch API, no caching            Claude Opus 5.5    $1.6999  $0.8499  $0.8499    50.0%
+Cheaper tier, no caching         Claude Sonnet 5.5  $1.6999  $0.8499  $0.8499    50.0%
+Cheaper tier + 5 minute caching  Claude Sonnet 5.5  $1.6999  $0.3440  $1.3559    79.8%
+
+COST BREAKDOWN
+Scenario                           Input  Cache write  Cache read   Output    Total  Cache hits
+-------------------------------  -------  -----------  ----------  -------  -------  ----------
+No caching (baseline)            $1.2900      $0.0000     $0.0000  $0.4099  $1.6999        0/48
+Prompt caching, 5 minute TTL     $0.0996      $0.1240     $0.0546  $0.4099  $0.6880       44/48
+Prompt caching, 1 hour TTL       $0.0996      $0.0992     $0.0570  $0.4099  $0.6657       46/48
+Batch API, no caching            $0.6450      $0.0000     $0.0000  $0.2049  $0.8499        0/48
+Cheaper tier, no caching         $0.6450      $0.0000     $0.0000  $0.2049  $0.8499        0/48
+Cheaper tier + 5 minute caching  $0.0498      $0.0620     $0.0273  $0.2049  $0.3440       44/48
+
+WHAT EACH STRATEGY COSTS YOU
+- Prompt caching, 5 minute TTL: prefix must stay byte identical
+- Prompt caching, 1 hour TTL: writes cost more, survives idle gaps
+- Batch API, no caching: asynchronous, not for interactive use
+- Cheaper tier, no caching: answer quality must be re-checked
+- Cheaper tier + 5 minute caching: both of the above
+
+==============================================================================
+2. Same workload, cheaper tier set to the smallest model
+==============================================================================
+Workload: usage_recorded.jsonl (48 requests)
+Prices: https://platform.claude.com/docs/en/about-claude/pricing
+Fetched on: 2026-11-24 (re-check before relying on these numbers)
+
+BEFORE AND AFTER
+Strategy                         Model              Before    After    Saved  Saved %
+-------------------------------  ----------------  -------  -------  -------  -------
+Prompt caching, 5 minute TTL     Claude Opus 5.5   $1.6999  $0.6880  $1.0118    59.5%
+Prompt caching, 1 hour TTL       Claude Opus 5.5   $1.6999  $0.6657  $1.0342    60.8%
+Batch API, no caching            Claude Opus 5.5   $1.6999  $0.8499  $0.8499    50.0%
+Cheaper tier, no caching         Claude Haiku 5.5  $1.6999  $0.0425  $1.6574    97.5%
+Cheaper tier + 5 minute caching  Claude Haiku 5.5  $1.6999  $0.0186  $1.6813    98.9%
+
+COST BREAKDOWN
+Scenario                           Input  Cache write  Cache read   Output    Total  Cache hits
+-------------------------------  -------  -----------  ----------  -------  -------  ----------
+No caching (baseline)            $1.2900      $0.0000     $0.0000  $0.4099  $1.6999        0/48
+Prompt caching, 5 minute TTL     $0.0996      $0.1240     $0.0546  $0.4099  $0.6880       44/48
+Prompt caching, 1 hour TTL       $0.0996      $0.0992     $0.0570  $0.4099  $0.6657       46/48
+Batch API, no caching            $0.6450      $0.0000     $0.0000  $0.2049  $0.8499        0/48
+Cheaper tier, no caching         $0.0322      $0.0000     $0.0000  $0.0102  $0.0425        0/48
+Cheaper tier + 5 minute caching  $0.0025      $0.0031     $0.0027  $0.0102  $0.0186       44/48
+
+WHAT EACH STRATEGY COSTS YOU
+- Prompt caching, 5 minute TTL: prefix must stay byte identical
+- Prompt caching, 1 hour TTL: writes cost more, survives idle gaps
+- Batch API, no caching: asynchronous, not for interactive use
+- Cheaper tier, no caching: answer quality must be re-checked
+- Cheaper tier + 5 minute caching: both of the above
+
+==============================================================================
+3. Replay runner, offline mock transport
+==============================================================================
+Replay transport: offline mock (pass --live to use the real API)
+Model: Claude Opus 5.5, 6 requests per pass
+Prices: https://platform.claude.com/docs/en/about-claude/pricing
+Fetched on: 2026-11-24 (re-check before relying on these numbers)
+
+Pass                 Input tok  Cache write tok  Cache read tok  Output tok     Cost
+-------------------  ---------  ---------------  --------------  ----------  -------
+Before: caching off     21,497                0               0         845  $0.1029
+After: caching on           71            3,571          17,855         845  $0.0386
+
+Saved by caching on this replay: $0.0643 (62.5%)
+Token counts above are mock estimates (about 4 characters per token), not measurements.

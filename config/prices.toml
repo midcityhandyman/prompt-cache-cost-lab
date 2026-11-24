@@ -1,0 +1,61 @@
+# The single source of prices for the lab. Nothing else in the repo holds a price.
+#
+# Values were copied by hand from the official pricing page on the date below.
+# Prices change. Re-check the page and update `fetched_on` before trusting a result.
+# If you cannot verify a number, write the string "PLACEHOLDER" instead of guessing.
+# The lab refuses to cost a model that still has a placeholder.
+
+[meta]
+source_url = "https://platform.claude.com/docs/en/about-claude/pricing"
+fetched_on = "2026-11-24"
+currency = "USD"
+unit = "per million tokens (MTok)"
+
+[modifiers]
+# "50 percent discount on both input and output tokens" for the Batch API.
+# The pricing page says this stacks with the prompt caching multipliers.
+batch_multiplier = 0.5
+
+[caching]
+# Seconds a cache entry lives after the last write or read.
+ttl_5m_seconds = 300
+ttl_1h_seconds = 3600
+# NOT from the pricing page. Minimum prefix length that can be cached at all.
+# Taken from prompt caching reference notes for the three models below and not
+# independently verified here. Shorter prefixes silently do not cache.
+min_cacheable_prefix_tokens = 512
+
+[models.claude-opus-5-5]
+label = "Claude Opus 5.5"
+input = 4.00
+cache_write_5m = 5.00
+cache_write_1h = 8.00
+cache_read = 0.20
+output = 20.00
+
+[models.claude-sonnet-5-5]
+label = "Claude Sonnet 5.5"
+input = 2.00
+cache_write_5m = 2.50
+cache_write_1h = 4.00
+cache_read = 0.10
+output = 10.00
+
+[models.claude-haiku-5-5]
+label = "Claude Haiku 5.5"
+# Prices for prompts up to 100,000 tokens.
+input = 0.10
+cache_write_5m = 0.125
+cache_write_1h = 0.20
+cache_read = 0.01
+output = 0.50
+
+[models.claude-haiku-5-5.long_prompt]
+# A request whose whole prompt (input + cache writes + cache reads) is over the
+# threshold pays these prices instead. Each request is priced on its own.
+over_prompt_tokens = 100000
+input = 0.50
+cache_write_5m = 0.625
+cache_write_1h = 1.00
+cache_read = 0.05
+output = 2.50
